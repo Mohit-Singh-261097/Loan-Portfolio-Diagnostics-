@@ -1,0 +1,9 @@
+"credit_band","employment_type","total_loans","avg_income","avg_loan_amount","lti_ratio","written_off","write_off_rate"
+"3. Good (650-749)",Salaried,821,45972,468760,10.20,115,14.01
+"2. Fair (500-649)",Self-Employed,1416,47064,456266,9.69,193,13.63
+"1. Poor (300-499)",Salaried,1588,46586,450352,9.67,213,13.41
+"2. Fair (500-649)",Salaried,1491,45649,442330,9.69,192,12.88
+"3. Good (650-749)",Self-Employed,787,46097,456250,9.90,100,12.71
+"4. Excellent (750+)",Salaried,1199,45327,448578,9.90,147,12.26
+"4. Excellent (750+)",Self-Employed,1132,45091,434121,9.63,138,12.19
+"1. Poor (300-499)",Self-Employed,1566,46423,452727,9.75,184,11.75

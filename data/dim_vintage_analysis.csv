@@ -1,0 +1,4 @@
+"vintage_year","total_loans","avg_loan_amount","written_off","write_off_rate","recovery_rate","avg_dpd","missed_payments","paid_payments","partial_payments"
+2021,3348,463804.94,447,13.35,86.07,11.0,8949,65900,10169
+2022,3216,444684.88,388,12.06,86.20,10.9,6289,46874,6989
+2023,3236,442412.22,427,13.20,86.04,11.0,2897,21556,3258

@@ -1,0 +1,41 @@
+branch_id,branch_name,city,state,region
+BR001,FinServe Delhi Branch,Delhi,Delhi,North
+BR002,FinServe Lucknow Branch,Lucknow,Uttar Pradesh,North
+BR003,FinServe Jaipur Branch,Jaipur,Rajasthan,North
+BR004,FinServe Chandigarh Branch,Chandigarh,Punjab,North
+BR005,FinServe Agra Branch,Agra,Uttar Pradesh,North
+BR006,FinServe Meerut Branch,Meerut,Uttar Pradesh,North
+BR007,FinServe Varanasi Branch,Varanasi,Uttar Pradesh,North
+BR008,FinServe Kanpur Branch,Kanpur,Uttar Pradesh,North
+BR009,FinServe Amritsar Branch,Amritsar,Punjab,North
+BR010,FinServe Ludhiana Branch,Ludhiana,Punjab,North
+BR011,FinServe Bangalore Branch,Bangalore,Karnataka,South
+BR012,FinServe Chennai Branch,Chennai,Tamil Nadu,South
+BR013,FinServe Hyderabad Branch,Hyderabad,Telangana,South
+BR014,FinServe Kochi Branch,Kochi,Kerala,South
+BR015,FinServe Coimbatore Branch,Coimbatore,Tamil Nadu,South
+BR016,FinServe Mysore Branch,Mysore,Karnataka,South
+BR017,FinServe Vizag Branch,Vizag,Andhra Pradesh,South
+BR018,FinServe Madurai Branch,Madurai,Tamil Nadu,South
+BR019,FinServe Mangalore Branch,Mangalore,Karnataka,South
+BR020,FinServe Tirupati Branch,Tirupati,Andhra Pradesh,South
+BR021,FinServe Kolkata Branch,Kolkata,West Bengal,East
+BR022,FinServe Bhubaneswar Branch,Bhubaneswar,Odisha,East
+BR023,FinServe Patna Branch,Patna,Bihar,East
+BR024,FinServe Guwahati Branch,Guwahati,Assam,East
+BR025,FinServe Ranchi Branch,Ranchi,Jharkhand,East
+BR026,FinServe Jamshedpur Branch,Jamshedpur,Jharkhand,East
+BR027,FinServe Cuttack Branch,Cuttack,Odisha,East
+BR028,FinServe Siliguri Branch,Siliguri,West Bengal,East
+BR029,FinServe Asansol Branch,Asansol,West Bengal,East
+BR030,FinServe Dhanbad Branch,Dhanbad,Jharkhand,East
+BR031,FinServe Mumbai Branch,Mumbai,Maharashtra,West
+BR032,FinServe Pune Branch,Pune,Maharashtra,West
+BR033,FinServe Ahmedabad Branch,Ahmedabad,Gujarat,West
+BR034,FinServe Surat Branch,Surat,Gujarat,West
+BR035,FinServe Nagpur Branch,Nagpur,Maharashtra,West
+BR036,FinServe Nashik Branch,Nashik,Maharashtra,West
+BR037,FinServe Vadodara Branch,Vadodara,Gujarat,West
+BR038,FinServe Rajkot Branch,Rajkot,Gujarat,West
+BR039,FinServe Aurangabad Branch,Aurangabad,Maharashtra,West
+BR040,FinServe Indore Branch,Indore,Madhya Pradesh,West

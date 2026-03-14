@@ -1,0 +1,4 @@
+"payment_status","total_payments","pct","total_emi","total_paid","recovery_rate"
+Paid,134330,77.70,2688840192,2710294272,100.80
+Partially Paid,20416,11.81,411715840,255083120,61.96
+Missed,18135,10.49,358736384,13432690,3.74

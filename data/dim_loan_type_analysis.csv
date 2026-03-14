@@ -1,0 +1,4 @@
+"loan_type","total_loans","total_value","avg_loan_amount","avg_interest_rate","portfolio_pct","written_off","write_off_rate","collection_efficiency"
+Personal Loan,5886,47861517000,459134.11,17.20,60.06,767,13.03,85.88
+Two-Wheeler Loan,2007,15880028000,449502.60,17.26,20.48,248,12.36,86.47
+Consumer Durable,1907,14698593000,441266.68,17.11,19.46,247,12.95,86.48
