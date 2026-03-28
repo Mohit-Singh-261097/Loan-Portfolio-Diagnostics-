@@ -15,7 +15,9 @@
 - [Recommendations](#recommendations)
 - [Data Model](#data-model)
 - [SQL Queries](#sql-queries)
+- [BigQuery Cloud Setup](#️-bigquery-cloud-setup)
 - [How to Run](#how-to-run)
+- [Project Structure](#project-structure)
 
 ---
 
@@ -60,13 +62,16 @@ The dashboard is structured across **3 pages**:
 | `dim_collections_funnel` | 3 | Payment status funnel with recovery rates |
 | `dim_regional_analysis` | 17 | State-wise portfolio and risk metrics |
 
-**Source tables (PostgreSQL):** `loans`, `customers`, `branches`, `repayments`
+**Source tables:** `loans`, `customers`, `branches`, `repayments`
+**Available on:** PostgreSQL (local) · BigQuery (cloud — see [setup guide](#️-bigquery-cloud-setup))
 
 ---
 
 ## Tech Stack
 
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat&logo=postgresql&logoColor=white)
+![BigQuery](https://img.shields.io/badge/BigQuery-4285F4?style=flat&logo=googlebigquery&logoColor=white)
+![GCP](https://img.shields.io/badge/GCP-Cloud%20Storage-4285F4?style=flat&logo=googlecloud&logoColor=white)
 ![Power BI](https://img.shields.io/badge/Power%20BI-F2C811?style=flat&logo=powerbi&logoColor=black)
 ![DAX](https://img.shields.io/badge/DAX-Measures-2E75B6?style=flat)
 ![SQL](https://img.shields.io/badge/SQL-Window%20Functions-336791?style=flat)
@@ -260,7 +265,7 @@ loans ──────────────── customers
 
 ## SQL Queries
 
-Eight queries were written to extract analysis-ready datasets from the PostgreSQL source tables:
+Eight analytical queries produce the Power BI / BigQuery dataset tables from the source tables:
 
 | Query | Output Table | Purpose |
 |-------|-------------|---------|
@@ -273,35 +278,146 @@ Eight queries were written to extract analysis-ready datasets from the PostgreSQ
 | Q7 | `dim_collections_funnel` | Payment status funnel with recovery rates |
 | Q8 | `dim_dpd_analysis` | Delinquency distribution across DPD buckets |
 
-Key SQL techniques used: `WINDOW FUNCTIONS` (portfolio % share), `CASE` bucketing (DPD, credit band, LTI risk), `NULLIF` for safe division, `EXTRACT` for vintage year, `FILTER` clause for conditional aggregation.
+Key SQL techniques used: `WINDOW FUNCTIONS` (portfolio % share), `CASE` bucketing (DPD, credit band, LTI risk), `NULLIF` for safe division, `EXTRACT` for vintage year, `COUNTIF` / `FILTER` for conditional aggregation.
+
+All queries are available in two dialects:
+- **PostgreSQL** → `sql/` folder
+- **BigQuery Standard SQL** → `bigquery/` folder
+
+---
+
+## ☁️ BigQuery Cloud Setup
+
+This project includes a complete **BigQuery-compatible SQL variant** for teams running on GCP rather than on-premise PostgreSQL. All 5 SQL scripts have been ported with documented dialect adaptations.
+
+### BigQuery SQL Files
+
+| File | Original | Purpose |
+|------|----------|---------|
+| `bigquery/bq_01_customers_cleaning.sql` | `Customers_cleaning.sql` | Null checks, age/gender fixes, income imputation via MERGE |
+| `bigquery/bq_02_loans_cleaning.sql` | `Loans_cleaning.sql` | Dedup via ROW_NUMBER, date type conversion via CREATE OR REPLACE |
+| `bigquery/bq_03_repayments_cleaning.sql` | `repayments_cleaning.sql` | Date casting via SAFE_CAST, paid_date imputation via DATE_ADD |
+| `bigquery/bq_04_eda.sql` | `EDA.sql` | UNENFORCED PK/FK constraints, master VIEW, 15 EDA queries |
+| `bigquery/bq_05_portfolio_analysis.sql` | `Portfolio_analysis.sql` | All 8 Power BI dataset queries ported to BQ dialect |
+
+### Key PostgreSQL → BigQuery Dialect Adaptations
+
+| Pattern | PostgreSQL | BigQuery |
+|---------|-----------|---------|
+| Conditional count | `COUNT(*) FILTER (WHERE condition)` | `COUNTIF(condition)` |
+| Type casting | `value::numeric` | `CAST(value AS NUMERIC)` |
+| String concat | `first_name \|\| ' ' \|\| last_name` | `CONCAT(first_name, ' ', last_name)` |
+| Safe casting | `value::date` | `SAFE_CAST(value AS DATE)` |
+| Date arithmetic | `(due_date + days_past_due)::date` | `DATE_ADD(due_date, INTERVAL days_past_due DAY)` |
+| Median (aggregate) | `PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY col)` | `PERCENTILE_CONT(col, 0.5) OVER (PARTITION BY ...)` |
+| Dedup delete | `DELETE ... WHERE ctid NOT IN (...)` | `CREATE OR REPLACE TABLE AS SELECT ... WHERE row_num = 1` |
+| Column type change | `ALTER COLUMN ... TYPE DATE USING ...` | `CREATE OR REPLACE TABLE` with `CAST()` |
+| Regex match | `col ~ '^\d{4}...'` | `REGEXP_CONTAINS(col, r'^\d{4}...')` |
+| Constraints | Enforced PK/FK | `NOT ENFORCED` PK/FK (metadata only) |
+| Update all rows | `UPDATE ... SET` (no WHERE needed) | `UPDATE ... SET ... WHERE TRUE` |
+| Schema prefix | `public.table_name` | `` `project.dataset.table_name` `` |
+
+### How to Run on BigQuery (Free Tier)
+
+**Prerequisites:** Google account — no credit card required for sandbox
+
+**Step 1 — Create a GCP Project**
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com)
+2. Click **New Project** → name it `loan-portfolio-diagnostics`
+3. Enable the **BigQuery API** (usually auto-enabled)
+
+**Step 2 — Create a Dataset**
+
+```bash
+# Via bq CLI
+bq mk --dataset loan_portfolio_diagnostics.nbfc_loans
+
+# Or via Console: BigQuery → your project → Create Dataset
+# Dataset ID: nbfc_loans | Location: asia-south1 (Mumbai) or US
+```
+
+**Step 3 — Load CSV Files**
+
+Upload the 8 CSVs from `/data/` to BigQuery tables:
+
+```bash
+bq load \
+  --autodetect \
+  --source_format=CSV \
+  --skip_leading_rows=1 \
+  loan_portfolio_diagnostics.nbfc_loans.fact_loan_repayments \
+  gs://your-bucket/fact_loan_repayments.csv
+```
+
+> **Tip:** Use BigQuery's **Auto-detect schema** for all 8 CSVs. Review `disbursement_date` / `due_date` columns — correct to `DATE` type if auto-detected as `STRING`.
+
+**Step 4 — Run BigQuery SQL Scripts in order**
+
+```
+1. bq_01_customers_cleaning.sql    ← clean source tables first
+2. bq_02_loans_cleaning.sql
+3. bq_03_repayments_cleaning.sql
+4. bq_04_eda.sql                   ← creates loan_master VIEW
+5. bq_05_portfolio_analysis.sql    ← 8 analytical output tables
+```
+
+Replace `your_project.your_dataset` with your actual GCP project ID and dataset name.
+
+**Step 5 — Connect Power BI to BigQuery**
+
+1. Power BI Desktop → **Get Data** → **Google BigQuery**
+2. Sign in with your Google account
+3. Navigate to your project → `nbfc_loans` dataset
+4. Load each of the 8 output tables
+
+> **Alternative:** Connect [Looker Studio](https://lookerstudio.google.com) (free) directly to BigQuery for a shareable, browser-based live dashboard — no Power BI Desktop required for viewers.
+
+### PostgreSQL vs BigQuery
+
+| | PostgreSQL (local) | BigQuery (cloud) |
+|--|-------------------|-----------------|
+| Setup | Local install required | Browser-based, zero install |
+| Scale | Limited by local RAM | Petabyte-scale serverless |
+| Sharing | Share .sql files only | Share live query results |
+| Cost | Free (local) | Free tier: 10 GB storage, 1 TB queries/month |
+| BI connect | Direct or CSV export | Native Power BI + Looker Studio connectors |
+
+BigQuery's free sandbox tier comfortably covers this entire project — the dataset is ~50 MB, well within the 10 GB free storage and 1 TB free query limits.
 
 ---
 
 ## How to Run
 
+### PostgreSQL (Local)
+
 **Prerequisites:** PostgreSQL 13+, Power BI Desktop (free)
 
 **1. Set up the database**
 ```sql
--- Run the schema and data generation scripts in /sql/
 psql -U your_user -d your_db -f sql/schema.sql
 psql -U your_user -d your_db -f sql/seed_data.sql
 ```
 
-**2. Export CSV files**
+**2. Run cleaning scripts in order**
 ```bash
-# Run each query in /sql/queries.sql and export results as CSV
-# Or connect Power BI directly to PostgreSQL (recommended)
+psql -U your_user -d your_db -f sql/Customers_cleaning.sql
+psql -U your_user -d your_db -f sql/Loans_cleaning.sql
+psql -U your_user -d your_db -f sql/repayments_cleaning.sql
+psql -U your_user -d your_db -f sql/EDA.sql
+psql -U your_user -d your_db -f sql/Portfolio_analysis.sql
 ```
 
 **3. Load into Power BI**
-- Open Power BI Desktop
-- Get Data → Text/CSV → load all 8 CSV files
+- Open Power BI Desktop → Get Data → Text/CSV → load all 8 CSV files
 - Or: Get Data → PostgreSQL → paste each named query
 
 **4. Open the dashboard**
-- Open `powerbi/dashboard.pbix`
-- Refresh data if prompted
+- Open `powerbi/dashboard.pbix` and refresh data if prompted
+
+### BigQuery (Cloud)
+
+See the [BigQuery Cloud Setup](#️-bigquery-cloud-setup) section above.
 
 ---
 
@@ -311,8 +427,18 @@ psql -U your_user -d your_db -f sql/seed_data.sql
 Loan-Portfolio-Diagnostics/
 │
 ├── README.md
-├── sql/
-│   └── queries.sql              # All 8 analytical queries
+├── sql/                                  # PostgreSQL scripts
+│   ├── Customers_cleaning.sql
+│   ├── Loans_cleaning.sql
+│   ├── repayments_cleaning.sql
+│   ├── EDA.sql
+│   └── Portfolio_analysis.sql
+├── bigquery/                             # BigQuery (GCP) variants
+│   ├── bq_01_customers_cleaning.sql
+│   ├── bq_02_loans_cleaning.sql
+│   ├── bq_03_repayments_cleaning.sql
+│   ├── bq_04_eda.sql
+│   └── bq_05_portfolio_analysis.sql
 ├── data/
 │   ├── fact_loan_repayments.csv
 │   ├── kpi_portfolio_summary.csv
@@ -333,4 +459,4 @@ Loan-Portfolio-Diagnostics/
 
 ---
 
-*Synthetic dataset · PostgreSQL · Power BI · DAX · Built as a portfolio project demonstrating NBFC risk analytics*
+*Synthetic dataset · PostgreSQL · BigQuery · GCP · Power BI · DAX · Built as a portfolio project demonstrating NBFC risk analytics*
